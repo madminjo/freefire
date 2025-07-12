@@ -9,12 +9,10 @@ from telegram.ext import (
 )
 
 # BOT TOKEN жана CONSTANTS
-TOKEN = "7599217736:AAF1kMVVpYl9_LOWPdy6mUPX7lMvwVPAu4g"
-CHANNEL_USERNAME = "@scrayff"
-# Разрешённые ID групп, где команды разрешены (замени на свой)
-ALLOWED_GROUP_IDS = [-1002194959049 ]  # <-- ЗАМЕНИ на реальный ID группы @scrayffinfo
+TOKEN = ""
+CHANNEL_USERNAME = "@ffleaks_scromnyi444"
 BAN_API = "https://scromnyi.vercel.app/region/ban-info?uid={uid}"
-LIKE_API = "https://likes-scromnyi.vercel.app/like?uid={uid}&region={region}&key=sk_5a6bF3r9PxY2qLmZ8cN1vW7eD0gH4jK"
+LIKE_API = "https://likes-scromnyi.vercel.app/like?uid={uid}&region={region}&key=Scromnyi206"
 
 # Timestamp -> readable формат
 def timestamp_to_date(timestamp):
@@ -48,7 +46,7 @@ def get_player_info(uid):
 # Каналга кошулуу кнопкасы
 def join_button():
     return InlineKeyboardMarkup([
-        [InlineKeyboardButton("🔗 Присоединиться к каналу", url=f"https://t.me/{CHANNEL_USERNAME.lstrip('@')}")]
+        [InlineKeyboardButton("🔗 Join Channel", url=f"https://t.me/{CHANNEL_USERNAME.lstrip('@')}")]
     ])
 
 # Каналда мүчөбү?
@@ -63,15 +61,8 @@ async def is_member(user_id: int, context: ContextTypes.DEFAULT_TYPE) -> bool:
 async def info_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     message = update.message
     chat = message.chat
-    print(f"[DEBUG] Chat ID: {chat.id}")  # 👈 покажет ID в терминале при запуске команды
-
-    if chat.type not in ["group", "supergroup"] or chat.id not in ALLOWED_GROUP_IDS:
-        return await message.reply_text(
-            "❗⚠️ Эта команда работает только в разрешённой группе!\n"
-            "Для этого была создана группа — @scrayffinfo 💬\n"
-            "Присоединяйтесь, чтобы получать помощь, делиться идеями и быть в курсе всех обновлений! 🚀\n"
-            "Добро пожаловать в наше сообщество! 🔥"
-        )
+    if chat.type not in ["group", "supergroup"]:
+        return await message.reply_text("❗ This command only works in groups.")
 
     command_text = message.text.split()
     if len(command_text) < 2:
@@ -80,14 +71,14 @@ async def info_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     uid = command_text[1]
     if not uid.isdigit():
-        await message.reply_text("UID должен быть числом.")
+        await message.reply_text("UID must be a number.")
         return
 
-    wait_msg = await message.reply_text("Загрузка информации об аккаунте, пожалуйста, подождите...")
+    wait_msg = await message.reply_text("Loading account info please wait...")
 
     data = get_player_info(uid)
     if not data:
-        await wait_msg.edit_text("UID не найден или недействителен.")
+        await wait_msg.edit_text("UID not found or invalid.")
         return
 
     basic = data.get("basicInfo", {})
@@ -107,7 +98,7 @@ async def info_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     rank = get_rank_name(rank_points)
 
     response = f"""
-<b>👤 Информация об Аккаунте</b>
+<b>👤 Account Information</b>
 ├ <b>Nickname:</b> {basic.get("nickname", "N/A")}
 ├ <b>UID:</b> {basic.get("accountId", "N/A")}
 ├ <b>Level:</b> {basic.get("level", "N/A")}
@@ -119,17 +110,17 @@ async def info_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 ├ <b>CS Rank:</b> {basic.get("csRank", "N/A")} ({cs_points} pts)
 └ <b>Bio:</b> {basic.get("nickname", "N/A")}
 
-<b>📆 История Аккаунта</b>
+<b>📆 Account History</b>
 ├ <b>Created At:</b> {created_at}
 └ <b>Last Login:</b> {last_login}
 
-<b>🛡️ Информация о Гильдии</b>
+<b>🛡️ Guild Info</b>
 ├ <b>Clan:</b> {clan.get("clanName", "N/A")} (ID: {clan.get("clanId", "N/A")})
 ├ <b>Level:</b> {clan.get("clanLevel", "N/A")}
 ├ <b>Members:</b> {clan.get("memberNum", 0)}/50
 ├ <b>Captain:</b> {captain.get("nickname", "N/A")} (UID: {captain.get("accountId", "N/A")})
 
-<b>👑 Информация о Лидере Гильдии</b>
+<b>👑 Guild Leader Info</b>
 ├ <b>Nickname:</b> {captain.get("nickname", "N/A")}
 ├ <b>Level:</b> {captain.get("level", "N/A")}
 ├ <b>Exp:</b> {captain.get("exp", 0)}
@@ -140,7 +131,7 @@ async def info_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 ├ <b>Created At:</b> {leader_created}
 └ <b>Last Login:</b> {leader_last_login}
 
-<b>📊 Информация о Критерия рейтинге</b>
+<b>📊 Credit Score Info</b>
 ├ <b>Credit Score:</b> {credit.get("creditScore", 0)}
 ├ <b>Illegal Count:</b> {credit.get("illegalCnt", 0)}
 ├ <b>Like Count:</b> {credit.get("likeCnt", 0)}
@@ -148,7 +139,7 @@ async def info_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 ├ <b>Summary End:</b> {timestamp_to_date(credit.get("summaryEndTime", "0"))}
 └ <b>Reward Status:</b> {credit.get("rewardState", "N/A")}
 
-<b>🐾 Информация о Питомце</b>
+<b>🐾 Pet Info</b>
 ├ <b>Pet Name:</b> {pet.get("name", "N/A")}
 ├ <b>Pet Level:</b> {pet.get("level", "N/A")}
 ├ <b>Exp:</b> {pet.get("exp", 0)}
@@ -161,13 +152,8 @@ async def info_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def check_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     message = update.message
     chat = message.chat
-    if chat.type not in ["group", "supergroup"] or chat.id not in ALLOWED_GROUP_IDS:
-        return await message.reply_text(
-            "❗⚠️ Эта команда работает только в разрешённой группе!\n"
-            "Для этого была создана группа — @scrayffinfo 💬\n"
-            "Присоединяйтесь, чтобы получать помощь, делиться идеями и быть в курсе всех обновлений! 🚀\n"
-            "Добро пожаловать в наше сообщество! 🔥"
-        )
+    if chat.type not in ["group", "supergroup"]:
+        return await message.reply_text("❗ This command only works in groups.")
 
     command_text = message.text.split()
     if len(command_text) < 2:
@@ -176,54 +162,46 @@ async def check_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     uid = command_text[1]
     if not uid.isdigit():
-        await message.reply_text("UID должен быть числом.")
+        await message.reply_text("UID must be a number.")
         return
 
-    wait_msg = await message.reply_text("Проверка статуса блокировки...")
+    wait_msg = await message.reply_text("Checking ban status...")
 
     try:
-    async with aiohttp.ClientSession() as session:
-        async with session.get(BAN_API.format(uid=uid)) as resp:
-            content_type = resp.headers.get("Content-Type", "")
-            if "application/json" not in content_type:
-                text = await resp.text()
-                raise Exception(f"Unexpected content-type: {content_type}\n{text}")
-            data = await resp.json()
+        async with aiohttp.ClientSession() as session:
+            async with session.get(BAN_API.format(uid=uid)) as resp:
+                content_type = resp.headers.get("Content-Type", "")
+                if "application/json" not in content_type:
+                    text = await resp.text()
+                    raise Exception(f"Unexpected content-type: {content_type}\n{text}")
+                data = await resp.json()
 
-    # Для отладки: можно удалить потом
-    print(f"DEBUG: API response data = {data}")
+        ban_status = str(data.get("ban_status", "")).lower()
+        if ban_status == "ban":
+            await wait_msg.edit_text("😥 Account banned permanently")
+        else:
+            await wait_msg.edit_text("😊 Account not banned")
 
-    ban_status = str(data.get("ban_status", "")).lower()
+    except Exception as e:
+        await wait_msg.edit_text(f"Error: {e}")
 
-    if ban_status == "ban":
-        await wait_msg.edit_text("😥 Ваша аккаунт заблокирован навсегда!")
-    else:
-        await wait_msg.edit_text("✅ Ваша аккаунт не заблокирован!")
-
-except Exception as e:
-    await wait_msg.edit_text(f"Error: {e}")
 # /like командасы
 async def like_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     message = update.message
     chat = message.chat
-    if chat.type not in ["group", "supergroup"] or chat.id not in ALLOWED_GROUP_IDS:
-        return await message.reply_text(
-            "❗⚠️ Эта команда работает только в разрешённой группе!\n"
-            "Для этого была создана группа — @scrayffinfo 💬\n"
-            "Присоединяйтесь, чтобы получать помощь, делиться идеями и быть в курсе всех обновлений! 🚀\n"
-            "Добро пожаловать в наше сообщество! 🔥"
-        )
+    if chat.type not in ["group", "supergroup"]:
+        return await message.reply_text("❗ This command only works in groups.")
 
     user = message.from_user
     if not await is_member(user.id, context):
-        return await message.reply_text("Пожалуйста, сначала присоединитесь к необходимому каналу.", reply_markup=join_button())
+        return await message.reply_text("Please join the required channel first.", reply_markup=join_button())
 
     args = context.args
     if len(args) != 2:
         return await message.reply_text("/like <region> <uid>")
 
     region, uid = args
-    wait_msg = await message.reply_text("Отправка лайков, пожалуйста, подождите...")
+    wait_msg = await message.reply_text("Sending likes, please wait...")
 
     try:
         async with aiohttp.ClientSession() as session:
@@ -235,10 +213,10 @@ async def like_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 data = await resp.json()
 
         if data.get("LikesGivenByAPI") == 0:
-            await wait_msg.edit_text("Игрок достиг максимума лайков на сегодня.")
+            await wait_msg.edit_text("Player has reached max likes today.")
         else:
             text = (
-                "✅ Отправленные лайки\n"
+                "✅ Likes Sent\n"
                 f"Player Name: {data['PlayerNickname']}\n"
                 f"UID: {data['UID']}\n"
                 f"Likes Before: {data['LikesBeforeCommand']}\n"
