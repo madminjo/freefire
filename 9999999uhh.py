@@ -1,13 +1,3 @@
-import logging
-import requests
-import aiohttp
-from datetime import datetime
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.constants import ParseMode
-from telegram.ext import (
-    ApplicationBuilder, Application, CommandHandler, ContextTypes,
-)
-
 # BOT TOKEN жана CONSTANTS
 TOKEN = "7599217736:AAGaunWV7P5ySpAKbSXPTqau7UYJVPqisQw"
 CHANNEL_USERNAME = "@scrayff"
@@ -181,27 +171,24 @@ async def check_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     wait_msg = await message.reply_text("Проверка статуса блокировки...")
 
-try:
-    async with aiohttp.ClientSession() as session:
-        async with session.get(BAN_API.format(uid=uid)) as resp:
-            content_type = resp.headers.get("Content-Type", "")
-            if "application/json" not in content_type:
-                text = await resp.text()
-                raise Exception(f"Unexpected content-type: {content_type}\n{text}")
-            data = await resp.json()
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(BAN_API.format(uid=uid)) as resp:
+                content_type = resp.headers.get("Content-Type", "")
+                if "application/json" not in content_type:
+                    text = await resp.text()
+                    raise Exception(f"Unexpected content-type: {content_type}\n{text}")
+                data = await resp.json()
 
-    # Для отладки: можно удалить потом
-    print(f"DEBUG: API response data = {data}")
+        ban_status = str(data.get("ban_status", "")).lower()
+        if ban_status == "ban":
+            await wait_msg.edit_text("😥 Аккаунт заблокирован навсегда!")
+        else:
+            await wait_msg.edit_text("😊 Аккаунт не заблокирован!")
 
-    ban_status = str(data.get("ban_status", "")).lower()
+    except Exception as e:
+        await wait_msg.edit_text(f"Error: {e}")
 
-    if ban_status == "ban":
-        await wait_msg.edit_text("😥 Ваша аккаунт заблокирован навсегда!")
-    else:
-        await wait_msg.edit_text("✅ Ваша аккаунт не заблокирован!")
-
-except Exception as e:
-    await wait_msg.edit_text(f"Error: {e}")
 # /like командасы
 async def like_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     message = update.message
