@@ -9,7 +9,7 @@ from telegram.ext import (
 )
 
 # BOT TOKEN жана CONSTANTS
-TOKEN = "7599217736:AAF1kMVVpYl9_LOWPdy6mUPX7lMvwVPAu4g"
+TOKEN = "7599217736:AAGaunWV7P5ySpAKbSXPTqau7UYJVPqisQw"
 CHANNEL_USERNAME = "@scrayff"
 # Разрешённые ID групп, где команды разрешены (замени на свой)
 ALLOWED_GROUP_IDS = [-1002194959049 ]  # <-- ЗАМЕНИ на реальный ID группы @scrayffinfo
