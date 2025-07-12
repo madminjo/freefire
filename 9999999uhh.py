@@ -181,7 +181,7 @@ async def check_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     wait_msg = await message.reply_text("Проверка статуса блокировки...")
 
-    try:
+try:
     async with aiohttp.ClientSession() as session:
         async with session.get(BAN_API.format(uid=uid)) as resp:
             content_type = resp.headers.get("Content-Type", "")
