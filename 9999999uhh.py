@@ -9,8 +9,8 @@ from telegram.ext import (
 )
 
 # BOT TOKEN жана CONSTANTS
-TOKEN = ""
-CHANNEL_USERNAME = "@ffleaks_scromnyi444"
+TOKEN = "7599217736:AAF1kMVVpYl9_LOWPdy6mUPX7lMvwVPAu4g"
+CHANNEL_USERNAME = "@scrayff"
 BAN_API = "https://scromnyi.vercel.app/region/ban-info?uid={uid}"
 LIKE_API = "https://likes-scromnyi.vercel.app/like?uid={uid}&region={region}&key=Scromnyi206"
 
