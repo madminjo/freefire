@@ -14,7 +14,7 @@ CHANNEL_USERNAME = "@scrayff"
 # Разрешённые ID групп, где команды разрешены (замени на свой)
 ALLOWED_GROUP_IDS = [-1002194959049 ]  # <-- ЗАМЕНИ на реальный ID группы @scrayffinfo
 BAN_API = "https://scromnyi.vercel.app/region/ban-info?uid={uid}"
-LIKE_API = "https://likes-scromnyi.vercel.app/like?uid={uid}&region={region}&key=Scromnyi206"
+LIKE_API = "https://likes-scromnyi.vercel.app/like?uid={uid}&region={region}&key=sk_5a6bF3r9PxY2qLmZ8cN1vW7eD0gH4jK"
 
 # Timestamp -> readable формат
 def timestamp_to_date(timestamp):
