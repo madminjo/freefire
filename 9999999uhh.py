@@ -182,29 +182,26 @@ async def check_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     wait_msg = await message.reply_text("Проверка статуса блокировки...")
 
     try:
-        async with aiohttp.ClientSession() as session:
-            async with session.get(BAN_API.format(uid=uid)) as resp:
-                content_type = resp.headers.get("Content-Type", "")
-                if "application/json" not in content_type:
-                    text = await resp.text()
-                    raise Exception(f"Unexpected content-type: {content_type}\n{text}")
-                data = await resp.json()
+    async with aiohttp.ClientSession() as session:
+        async with session.get(BAN_API.format(uid=uid)) as resp:
+            content_type = resp.headers.get("Content-Type", "")
+            if "application/json" not in content_type:
+                text = await resp.text()
+                raise Exception(f"Unexpected content-type: {content_type}\n{text}")
+            data = await resp.json()
 
-        # Проверка на наличие ошибки в ответе
-        if "error" in data:
-            await wait_msg.edit_text(f"Ошибка: {data['error']}")
-            return
+    # Для отладки: можно удалить потом
+    print(f"DEBUG: API response data = {data}")
 
-        ban_status = str(data.get("ban_status", "")).lower()
+    ban_status = str(data.get("ban_status", "")).lower()
 
-        if ban_status == "ban":
-            await wait_msg.edit_text("😥 Аккаунт заблокирован навсегда!")
-        else:
-            await wait_msg.edit_text("😊 Аккаунт не заблокирован!")
+    if ban_status == "ban":
+        await wait_msg.edit_text("😥 Ваша аккаунт заблокирован навсегда!")
+    else:
+        await wait_msg.edit_text("✅ Ваша аккаунт не заблокирован!")
 
-    except Exception as e:
-        await wait_msg.edit_text(f"Ошибка при запросе: {e}")
-
+except Exception as e:
+    await wait_msg.edit_text(f"Error: {e}")
 # /like командасы
 async def like_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     message = update.message
