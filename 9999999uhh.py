@@ -190,14 +190,20 @@ async def check_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     raise Exception(f"Unexpected content-type: {content_type}\n{text}")
                 data = await resp.json()
 
+        # Проверка на наличие ошибки в ответе
+        if "error" in data:
+            await wait_msg.edit_text(f"Ошибка: {data['error']}")
+            return
+
         ban_status = str(data.get("ban_status", "")).lower()
+
         if ban_status == "ban":
             await wait_msg.edit_text("😥 Аккаунт заблокирован навсегда!")
         else:
             await wait_msg.edit_text("😊 Аккаунт не заблокирован!")
 
     except Exception as e:
-        await wait_msg.edit_text(f"Error: {e}")
+        await wait_msg.edit_text(f"Ошибка при запросе: {e}")
 
 # /like командасы
 async def like_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
