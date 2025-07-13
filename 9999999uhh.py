@@ -5,26 +5,23 @@ from datetime import datetime
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.constants import ParseMode
 from telegram.ext import (
-    ApplicationBuilder, Application, CommandHandler, ContextTypes,
+    ApplicationBuilder, Application, CommandHandler, ContextTypes, CallbackContext
 )
 
 # BOT TOKEN жана CONSTANTS
 TOKEN = "7599217736:AAGaunWV7P5ySpAKbSXPTqau7UYJVPqisQw"
 CHANNEL_USERNAME = "@scrayff"
-# Разрешённые ID групп, где команды разрешены (замени на свой)
-ALLOWED_GROUP_IDS = [-1002194959049 ]  # <-- ЗАМЕНИ на реальный ID группы @scrayffinfo
+ALLOWED_GROUP_IDS = [-1002194959049]
 BAN_API = "https://scromnyi.vercel.app/region/ban-info?uid={uid}"
 LIKE_API = "https://likes-scromnyi.vercel.app/like?uid={uid}&region={region}&key=sk_5a6bF3r9PxY2qLmZ8cN1vW7eD0gH4jK"
 
 
-# Timestamp -> readable формат
 def timestamp_to_date(timestamp):
     try:
         return datetime.fromtimestamp(int(timestamp)).strftime("%b %d, %Y %I:%M %p")
     except:
         return "Unknown"
 
-# Rank аты
 def get_rank_name(rank_points):
     rank_map = {
         0: "Bronze", 1000: "Silver", 2000: "Gold",
@@ -36,7 +33,6 @@ def get_rank_name(rank_points):
             return rank
     return "Unranked"
 
-# Player маалымат алуу
 def get_player_info(uid):
     url = f"https://accinfo.vercel.app/player-info?region=SG&uid={uid}"
     try:
@@ -46,13 +42,11 @@ def get_player_info(uid):
     except requests.exceptions.RequestException:
         return None
 
-# Каналга кошулуу кнопкасы
 def join_button():
     return InlineKeyboardMarkup([
         [InlineKeyboardButton("🔗 Присоединиться к каналу", url=f"https://t.me/{CHANNEL_USERNAME.lstrip('@')}")]
     ])
 
-# Каналда мүчөбү?
 async def is_member(user_id: int, context: ContextTypes.DEFAULT_TYPE) -> bool:
     try:
         member = await context.bot.get_chat_member(chat_id=CHANNEL_USERNAME, user_id=user_id)
@@ -60,11 +54,10 @@ async def is_member(user_id: int, context: ContextTypes.DEFAULT_TYPE) -> bool:
     except:
         return False
 
-# /info командасы
 async def info_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     message = update.message
     chat = message.chat
-    print(f"[DEBUG] Chat ID: {chat.id}")  # 👈 покажет ID в терминале при запуске команды
+    print(f"[DEBUG] Chat ID: {chat.id}")
 
     if chat.type not in ["group", "supergroup"] or chat.id not in ALLOWED_GROUP_IDS:
         return await message.reply_text(
@@ -158,7 +151,6 @@ async def info_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 """
     await wait_msg.edit_text(response.strip(), parse_mode=ParseMode.HTML)
 
-# /check командасы
 async def check_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     message = update.message
     chat = message.chat
@@ -185,14 +177,9 @@ async def check_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         async with aiohttp.ClientSession() as session:
             async with session.get(BAN_API.format(uid=uid)) as resp:
-                content_type = resp.headers.get("Content-Type", "")
-                if "application/json" not in content_type:
-                    text = await resp.text()
-                    raise Exception(f"Unexpected content-type: {content_type}\n{text}")
                 data = await resp.json()
 
-        ban_status = str(data.get("ban_status", "")).lower()
-        if ban_status == "ban":
+        if str(data.get("ban_status", "")).lower() == "ban":
             await wait_msg.edit_text("😥 Аккаунт заблокирован навсегда!")
         else:
             await wait_msg.edit_text("😊 Аккаунт не заблокирован!")
@@ -200,7 +187,6 @@ async def check_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except Exception as e:
         await wait_msg.edit_text(f"Error: {e}")
 
-# /like командасы
 async def like_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     message = update.message
     chat = message.chat
@@ -226,10 +212,6 @@ async def like_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         async with aiohttp.ClientSession() as session:
             async with session.get(LIKE_API.format(uid=uid, region=region)) as resp:
-                content_type = resp.headers.get("Content-Type", "")
-                if "application/json" not in content_type:
-                    text = await resp.text()
-                    raise Exception(f"Unexpected content-type: {content_type}\n{text}")
                 data = await resp.json()
 
         if data.get("LikesGivenByAPI") == 0:
@@ -248,15 +230,39 @@ async def like_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except Exception as e:
         await wait_msg.edit_text(f"Error occurred: {e}")
 
-# Ботту иштетүү
+# 🔁 Периодическая задача: auto /like
+async def scheduled_like_task(context: CallbackContext):
+    chat_id = ALLOWED_GROUP_IDS[0]
+    class FakeUser:
+        id = context.bot.id
+        is_bot = True
+        first_name = "Bot"
+    class FakeMessage:
+        def __init__(self):
+            self.chat = type("Chat", (), {"id": chat_id, "type": "group"})
+            self.text = "/like sg 1387904333"
+            self.from_user = FakeUser()
+        async def reply_text(self, text, **kwargs):
+            await context.bot.send_message(chat_id=chat_id, text=text, **kwargs)
+    fake_update = Update(update_id=0, message=FakeMessage())
+    await like_handler(fake_update, context)
+
 def main():
     logging.basicConfig(level=logging.INFO)
     app: Application = ApplicationBuilder().token(TOKEN).build()
+
     app.add_handler(CommandHandler(["info", "Info"], info_command))
     app.add_handler(CommandHandler("check", check_handler))
     app.add_handler(CommandHandler("like", like_handler))
+
+    async def on_startup(app: Application):
+        app.job_queue.run_repeating(scheduled_like_task, interval=300, first=10)
+        print("🕒 Авто-лайк задача запущена каждые 5 минут")
+
+    app.post_init = on_startup
+
     print("🤖 Bot started...")
     app.run_polling()
 
 if __name__ == "__main__":
-    main() 
+    main()
