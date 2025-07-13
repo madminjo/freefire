@@ -1,6 +1,7 @@
 import logging
 import requests
 import aiohttp
+import asyncio
 from datetime import datetime
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.constants import ParseMode
@@ -11,20 +12,16 @@ from telegram.ext import (
 # BOT TOKEN жана CONSTANTS
 TOKEN = "7599217736:AAGaunWV7P5ySpAKbSXPTqau7UYJVPqisQw"
 CHANNEL_USERNAME = "@scrayff"
-# Разрешённые ID групп, где команды разрешены (замени на свой)
-ALLOWED_GROUP_IDS = [-1002194959049 ]  # <-- ЗАМЕНИ на реальный ID группы @scrayffinfo
+ALLOWED_GROUP_IDS = [-1002194959049]
 BAN_API = "https://scromnyi.vercel.app/region/ban-info?uid={uid}"
 LIKE_API = "https://likes-scromnyi.vercel.app/like?uid={uid}&region={region}&key=sk_5a6bF3r9PxY2qLmZ8cN1vW7eD0gH4jK"
 
-
-# Timestamp -> readable формат
 def timestamp_to_date(timestamp):
     try:
         return datetime.fromtimestamp(int(timestamp)).strftime("%b %d, %Y %I:%M %p")
     except:
         return "Unknown"
 
-# Rank аты
 def get_rank_name(rank_points):
     rank_map = {
         0: "Bronze", 1000: "Silver", 2000: "Gold",
@@ -36,7 +33,6 @@ def get_rank_name(rank_points):
             return rank
     return "Unranked"
 
-# Player маалымат алуу
 def get_player_info(uid):
     url = f"https://accinfo.vercel.app/player-info?region=SG&uid={uid}"
     try:
@@ -46,13 +42,11 @@ def get_player_info(uid):
     except requests.exceptions.RequestException:
         return None
 
-# Каналга кошулуу кнопкасы
 def join_button():
     return InlineKeyboardMarkup([
         [InlineKeyboardButton("🔗 Присоединиться к каналу", url=f"https://t.me/{CHANNEL_USERNAME.lstrip('@')}")]
     ])
 
-# Каналда мүчөбү?
 async def is_member(user_id: int, context: ContextTypes.DEFAULT_TYPE) -> bool:
     try:
         member = await context.bot.get_chat_member(chat_id=CHANNEL_USERNAME, user_id=user_id)
@@ -60,17 +54,14 @@ async def is_member(user_id: int, context: ContextTypes.DEFAULT_TYPE) -> bool:
     except:
         return False
 
-# /info командасы
 async def info_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     message = update.message
     chat = message.chat
-    print(f"[DEBUG] Chat ID: {chat.id}")  # 👈 покажет ID в терминале при запуске команды
 
     if chat.type not in ["group", "supergroup"] or chat.id not in ALLOWED_GROUP_IDS:
         return await message.reply_text(
             "❗⚠️ Эта команда работает только в разрешённой группе!\n"
             "Для этого была создана группа — @scrayffinfo 💬\n"
-            "Присоединяйтесь, чтобы получать помощь, делиться идеями и быть в курсе всех обновлений! 🚀\n"
             "Добро пожаловать в наше сообщество! 🔥"
         )
 
@@ -141,7 +132,7 @@ async def info_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 ├ <b>Created At:</b> {leader_created}
 └ <b>Last Login:</b> {leader_last_login}
 
-<b>📊 Информация о Критерия рейтинге</b>
+<b>📊 Информация о Критериях рейтинга</b>
 ├ <b>Credit Score:</b> {credit.get("creditScore", 0)}
 ├ <b>Illegal Count:</b> {credit.get("illegalCnt", 0)}
 ├ <b>Like Count:</b> {credit.get("likeCnt", 0)}
@@ -158,17 +149,11 @@ async def info_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 """
     await wait_msg.edit_text(response.strip(), parse_mode=ParseMode.HTML)
 
-# /check командасы
 async def check_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     message = update.message
     chat = message.chat
     if chat.type not in ["group", "supergroup"] or chat.id not in ALLOWED_GROUP_IDS:
-        return await message.reply_text(
-            "❗⚠️ Эта команда работает только в разрешённой группе!\n"
-            "Для этого была создана группа — @scrayffinfo 💬\n"
-            "Присоединяйтесь, чтобы получать помощь, делиться идеями и быть в курсе всех обновлений! 🚀\n"
-            "Добро пожаловать в наше сообщество! 🔥"
-        )
+        return await message.reply_text("❗⚠️ Команда работает только в группе @scrayffinfo")
 
     command_text = message.text.split()
     if len(command_text) < 2:
@@ -185,10 +170,6 @@ async def check_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         async with aiohttp.ClientSession() as session:
             async with session.get(BAN_API.format(uid=uid)) as resp:
-                content_type = resp.headers.get("Content-Type", "")
-                if "application/json" not in content_type:
-                    text = await resp.text()
-                    raise Exception(f"Unexpected content-type: {content_type}\n{text}")
                 data = await resp.json()
 
         ban_status = str(data.get("ban_status", "")).lower()
@@ -198,65 +179,54 @@ async def check_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await wait_msg.edit_text("😊 Аккаунт не заблокирован!")
 
     except Exception as e:
-        await wait_msg.edit_text(f"Error: {e}")
+        await wait_msg.edit_text(f"Ошибка: {e}")
 
-# /like командасы
 async def like_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     message = update.message
     chat = message.chat
     if chat.type not in ["group", "supergroup"] or chat.id not in ALLOWED_GROUP_IDS:
-        return await message.reply_text(
-            "❗⚠️ Эта команда работает только в разрешённой группе!\n"
-            "Для этого была создана группа — @scrayffinfo 💬\n"
-            "Присоединяйтесь, чтобы получать помощь, делиться идеями и быть в курсе всех обновлений! 🚀\n"
-            "Добро пожаловать в наше сообщество! 🔥"
-        )
+        return await message.reply_text("❗⚠️ Команда работает только в группе @scrayffinfo")
 
     user = message.from_user
     if not await is_member(user.id, context):
-        return await message.reply_text("Пожалуйста, сначала присоединитесь к необходимому каналу.", reply_markup=join_button())
+        return await message.reply_text("Сначала подпишитесь на канал.", reply_markup=join_button())
 
     args = context.args
     if len(args) != 2:
         return await message.reply_text("/like <region> <uid>")
 
     region, uid = args
-    wait_msg = await message.reply_text("Отправка лайков, пожалуйста, подождите...")
+    wait_msg = await message.reply_text("Отправка лайков, подождите...")
 
     try:
         async with aiohttp.ClientSession() as session:
             async with session.get(LIKE_API.format(uid=uid, region=region)) as resp:
-                content_type = resp.headers.get("Content-Type", "")
-                if "application/json" not in content_type:
-                    text = await resp.text()
-                    raise Exception(f"Unexpected content-type: {content_type}\n{text}")
                 data = await resp.json()
 
         if data.get("LikesGivenByAPI") == 0:
-            await wait_msg.edit_text("Игрок достиг максимума лайков на сегодня.")
+            await wait_msg.edit_text("Достигнут максимум лайков на сегодня.")
         else:
-            text = (
-                "✅ Отправленные лайки\n"
-                f"Player Name: {data['PlayerNickname']}\n"
+            await wait_msg.edit_text(
+                f"✅ Лайки отправлены\n"
+                f"Имя: {data['PlayerNickname']}\n"
                 f"UID: {data['UID']}\n"
-                f"Likes Before: {data['LikesBeforeCommand']}\n"
-                f"Likes Given: {data['LikesGivenByAPI']}\n"
-                f"Likes After: {data['LikesAfterCommand']}"
+                f"Было: {data['LikesBeforeCommand']}\n"
+                f"Добавлено: {data['LikesGivenByAPI']}\n"
+                f"Стало: {data['LikesAfterCommand']}"
             )
-            await wait_msg.edit_text(text)
 
     except Exception as e:
-        await wait_msg.edit_text(f"Error occurred: {e}")
+        await wait_msg.edit_text(f"Ошибка: {e}")
 
-# Ботту иштетүү
-def main():
+# ⬇️ Правильный асинхронный запуск
+async def main():
     logging.basicConfig(level=logging.INFO)
-    app: Application = ApplicationBuilder().token(TOKEN).build()
+    app = ApplicationBuilder().token(TOKEN).build()
     app.add_handler(CommandHandler(["info", "Info"], info_command))
     app.add_handler(CommandHandler("check", check_handler))
     app.add_handler(CommandHandler("like", like_handler))
-    print("🤖 Bot started...")
-    app.run_polling()
+    print("🤖 Бот запущен...")
+    await app.run_polling()
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())
