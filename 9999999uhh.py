@@ -16,7 +16,7 @@ ALLOWED_GROUP_IDS = [-1002194959049]
 # 🔗 API-ссылки
 BAN_API = "https://scromnyi.vercel.app/region/ban-info?uid={uid}"
 LIKE_API_URL = "https://likes-scromnyi.vercel.app/like"
-LIKE_API_KEY = "sk_5a6bF3r9PxY2qLmZ8cN1vW7eD0gH4jK"
+LIKE_API_KEY = "7RK2ewDdhM2EjZDRfccAVC4x1vvbpo3H"
 
 def timestamp_to_date(timestamp):
     try:
