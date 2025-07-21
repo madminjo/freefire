@@ -8,13 +8,15 @@ from telegram.ext import (
     ApplicationBuilder, Application, CommandHandler, ContextTypes, CallbackContext
 )
 
-# BOT TOKEN жана CONSTANTS
+# 🔐 BOT TOKEN и КОНСТАНТЫ
 TOKEN = "7599217736:AAGaunWV7P5ySpAKbSXPTqau7UYJVPqisQw"
 CHANNEL_USERNAME = "@scrayff"
 ALLOWED_GROUP_IDS = [-1002194959049]
-BAN_API = "https://scromnyi.vercel.app/region/ban-info?uid={uid}"
-LIKE_API = "https://likes-scromnyi.vercel.app/like?uid={uid}&region={region}&key=sk_5a6bF3r9PxY2qLmZ8cN1vW7eD0gH4jK"
 
+# 🔗 API-ссылки
+BAN_API = "https://scromnyi.vercel.app/region/ban-info?uid={uid}"
+LIKE_API_URL = "https://likes-scromnyi.vercel.app/like"
+LIKE_API_KEY = "sk_5a6bF3r9PxY2qLmZ8cN1vW7eD0gH4jK"
 
 def timestamp_to_date(timestamp):
     try:
@@ -57,14 +59,11 @@ async def is_member(user_id: int, context: ContextTypes.DEFAULT_TYPE) -> bool:
 async def info_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     message = update.message
     chat = message.chat
-    print(f"[DEBUG] Chat ID: {chat.id}")
-
     if chat.type not in ["group", "supergroup"] or chat.id not in ALLOWED_GROUP_IDS:
         return await message.reply_text(
             "❗⚠️ Эта команда работает только в разрешённой группе!\n"
             "Для этого была создана группа — @scrayffinfo 💬\n"
-            "Присоединяйтесь, чтобы получать помощь, делиться идеями и быть в курсе всех обновлений! 🚀\n"
-            "Добро пожаловать в наше сообщество! 🔥"
+            "Присоединяйтесь, чтобы получать помощь, делиться идеями и быть в курсе всех обновлений! 🚀"
         )
 
     command_text = message.text.split()
@@ -134,7 +133,7 @@ async def info_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 ├ <b>Created At:</b> {leader_created}
 └ <b>Last Login:</b> {leader_last_login}
 
-<b>📊 Информация о Критерия рейтинге</b>
+<b>📊 Информация о Критериях рейтинга</b>
 ├ <b>Credit Score:</b> {credit.get("creditScore", 0)}
 ├ <b>Illegal Count:</b> {credit.get("illegalCnt", 0)}
 ├ <b>Like Count:</b> {credit.get("likeCnt", 0)}
@@ -157,9 +156,7 @@ async def check_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if chat.type not in ["group", "supergroup"] or chat.id not in ALLOWED_GROUP_IDS:
         return await message.reply_text(
             "❗⚠️ Эта команда работает только в разрешённой группе!\n"
-            "Для этого была создана группа — @scrayffinfo 💬\n"
-            "Присоединяйтесь, чтобы получать помощь, делиться идеями и быть в курсе всех обновлений! 🚀\n"
-            "Добро пожаловать в наше сообщество! 🔥"
+            "Для этого была создана группа — @scrayffinfo 💬"
         )
 
     command_text = message.text.split()
@@ -193,9 +190,7 @@ async def like_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if chat.type not in ["group", "supergroup"] or chat.id not in ALLOWED_GROUP_IDS:
         return await message.reply_text(
             "❗⚠️ Эта команда работает только в разрешённой группе!\n"
-            "Для этого была создана группа — @scrayffinfo 💬\n"
-            "Присоединяйтесь, чтобы получать помощь, делиться идеями и быть в курсе всех обновлений! 🚀\n"
-            "Добро пожаловать в наше сообщество! 🔥"
+            "Для этого была создана группа — @scrayffinfo 💬"
         )
 
     user = message.from_user
@@ -211,7 +206,8 @@ async def like_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     try:
         async with aiohttp.ClientSession() as session:
-            async with session.get(LIKE_API.format(uid=uid, region=region)) as resp:
+            params = {"uid": uid, "region": region, "key": LIKE_API_KEY}
+            async with session.get(LIKE_API_URL, params=params) as resp:
                 data = await resp.json()
 
         if data.get("LikesGivenByAPI") == 0:
@@ -230,7 +226,6 @@ async def like_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except Exception as e:
         await wait_msg.edit_text(f"Error occurred: {e}")
 
-# 🔁 Периодическая задача: auto /like
 async def scheduled_like_task(context: CallbackContext):
     chat_id = ALLOWED_GROUP_IDS[0]
     class FakeUser:
@@ -260,7 +255,6 @@ def main():
         print("🕒 Авто-лайк задача запущена каждые 5 минут")
 
     app.post_init = on_startup
-
     print("🤖 Bot started...")
     app.run_polling()
 
